@@ -1,0 +1,40 @@
+containers:
+  build-env:
+    image: python:3.8.9
+    working_directory: /src
+    environment:
+      PYTHONPATH: "/src"
+      PYTHONUSERBASE: "/src/.pip-cache"
+      PIPENV_VENV_IN_PROJECT: true
+    run_as_current_user:
+      enabled: true
+      home_directory: /home/container-user
+    volumes:
+      - local: .
+        container: /src
+        options: cached
+      - local: .pip-cache
+        container: /src/.pip-cache
+        options: cached
+  
+tasks:
+  dep:
+    description: Run this before doing the python stuff. It installs the dependencies into the local cache .pip-cache.
+    group: Run First! tasks
+    run:
+      container: build-env
+      command: sh -c 'pip install -r requirements.txt; echo "===="; echo ".pip-cache should now contain the modules $ls -a .pip-cache "; ls -a .pip-cache'
+
+  test_setup:
+    description: Run the main script to test dependency installation to local cache.
+    group: Test tasks
+    run:
+      container: build-env
+      command: python main.py 
+
+  clean:
+    description: Run the main script to test dependency installation to local cache.
+    group: Utility tasks
+    run:
+      container: build-env
+      command: sh -c 'rm -rf .pip-cache/*'
